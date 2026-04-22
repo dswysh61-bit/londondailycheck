@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>מרכז המעקב · לונדון</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useCallback, Component } = React;
+
+    const FALLBACK = [
+      {
+        title: "צעדה פרו-פלסטינית ענקית במרכז לונדון — עשרות אלפי משתתפים",
+        desc: "מפגינים צעדו מהייד פארק לכיכר הפרלמנט בקריאה להפסקת אש בעזה. המשטרה העריכה כ-40,000 משתתפים שנאספו בקריאה לאמברגו נשק על ישראל.",
+        source: "Guardian", color: "#4a9d7a", date: new Date(Date.now()-3600000*2).toISOString(), link: "https://palestinecampaign.org/events/", score: 3,
+      },
+      {
+        title: "PSC מכריזה על סדרת הפגנות שבועיות מחוץ לפרלמנט הבריטי",
+        desc: "ארגון PSC הכריז על ויג'ילים שבועיים ליד ווסטמינסטר, בדרישה שממשלת בריטניה תטיל אמברגו נשק על ישראל.",
+        source: "PSC", color: "#c9a84c", date: new Date(Date.now()-3600000*5).toISOString(), link: "https://palestinecampaign.org/events/", score: 3,
+      },
+      {
+        title: "מספר הנפגעים בעזה עולה על 50,000 בעוד שיחות הפסקת האש נתקלות בקשיים",
+        desc: "סוכנויות האו\"ם מזהירות מפני מצב הומניטרי קטסטרופלי, בעוד מגשרים בינלאומיים מתקשים לחדש את המשא ומתן.",
+        source: "Al Jazeera", color: "#e8a020", date: new Date(Date.now()-3600000*7).toISOString(), link: "https://www.aljazeera.com", score: 2,
+      },
+      {
+        title: "עובדי NHS לונדון מפגינים מחוץ למשרד הבריאות למען פלסטין",
+        desc: "מאות עובדי שירות הבריאות הלאומי התכנסו ברחבי לונדון בקריאה לסיום מיידי של הפעולות הצבאיות הישראליות בעזה.",
+        source: "BBC", color: "#c0392b", date: new Date(Date.now()-3600000*11).toISOString(), link: "https://www.bbc.co.uk", score: 3,
+      },
+      {
+        title: "סטודנטים ב-UCL וב-SOAS מחדשים מחנות הסולידריות",
+        desc: "סטודנטים הקימו מחדש מחנות מחאה בשתי אוניברסיטאות לונדוניות ומתחדשים בדרישות לניתוק השקעות מחברות ישראליות.",
+        source: "Independent", color: "#7b68ee", date: new Date(Date.now()-3600000*18).toISOString(), link: "https://www.independent.co.uk", score: 2,
+      },
+      {
+        title: "בריטניה שוקלת סנקציות נוספות על ישראל בעקבות לחץ פרלמנטרי",
+        desc: "חברי פרלמנט מהאגף השמאלי קוראים לממשלה להרחיב את הגבלות הנשק ולהכיר בפשעי מלחמה נגד אזרחים פלסטינים.",
+        source: "Guardian", color: "#4a9d7a", date: new Date(Date.now()-3600000*22).toISOString(), link: "https://www.theguardian.com", score: 1,
+      },
+    ];
+
+    const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
+    const FEEDS = [
+      { name: "Al Jazeera", color: "#e8a020", urls: [
+        R2J + encodeURIComponent("https://www.aljazeera.com/xml/rss/all.xml"),
+        R2J + encodeURIComponent("https://www.aljazeera.com/feed/"),
+      ]},
+      { name: "BBC", color: "#c0392b", urls: [
+        R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/world/rss.xml"),
+        R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/rss.xml"),
+      ]},
+      { name: "Guardian", color: "#4a9d7a", urls: [
+        R2J + encodeURIComponent("https://www.theguardian.com/world/rss"),
+        R2J + encodeURIComponent("https://www.theguardian.com/uk/rss"),
+      ]},
+      { name: "Independent", color: "#7b68ee", urls: [
+        R2J + encodeURIComponent("https://www.independent.co.uk/news/world/rss"),
+        R2J + encodeURIComponent("https://www.independent.co.uk/rss"),
+      ]},
+      { name: "Reuters", color: "#ff6600", urls: [
+        R2J + encodeURIComponent("https://feeds.reuters.com/reuters/worldNews"),
+        R2J + encodeURIComponent("https://feeds.reuters.com/reuters/topNews"),
+      ]},
+      { name: "Middle East Eye", color: "#00a651", urls: [
+        R2J + encodeURIComponent("https://www.middleeasteye.net/rss"),
+      ]},
+    ];
+
+    const IG_ACCOUNTS = [
+      { handle: "palestinesolidarityuk", desc: "PSC UK — הארגון הראשי לסולידריות", tag: "ראשי", url: "https://www.instagram.com/palestinesolidarityuk" },
+      { handle: "healthworkersandallies4pal", desc: "עובדי בריאות ועמיתים למען פלסטין", tag: "בריאות", url: "https://www.instagram.com/healthworkersandallies4pal" },
+      { handle: "actionswithimpact", desc: "פעולות עם השפעה — הפגנות ואקטיביזם", tag: "פעולה", url: "https://www.instagram.com/actionswithimpact/" },
+      { handle: "lewishamgreenwichcnd", desc: "Lewisham & Greenwich CND — נגד נשק גרעיני", tag: "מקומי", url: "https://www.instagram.com/lewishamgreenwichcnd/" },
+      { handle: "uclactionforpalestine", desc: "UCL — אקטיביזם סטודנטיאלי אוניברסיטת לונדון", tag: "סטודנטים", url: "https://www.instagram.com/uclactionforpalestine/" },
+      { handle: "soasliberatedzone", desc: "SOAS לונדון — אזור משוחרר", tag: "סטודנטים", url: "https://www.instagram.com/soasliberatedzone" },
+      { handle: "ijan_uk", desc: "IJAN UK — יהודים נגד אפרטהייד", tag: "יהודי", url: "https://www.instagram.com/ijan_uk" },
+    ];
+
+    function stripHtml(h) {
+      return (h||"").replace(/<[^>]*>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&nbsp;/g," ").replace(/&quot;/g,'"').trim();
+    }
+
+    function timeAgo(d) {
+      try {
+        const h = Math.floor((Date.now()-new Date(d))/3600000);
+        if (h<1) return "לפני פחות משעה";
+        if (h<24) return `לפני ${h} שעות`;
+        return `לפני ${Math.floor(h/24)} ימים`;
+      } catch { return ""; }
+    }
+
+    function score(text) {
+      const t=(text||"").toLowerCase();
+      const protest=["protest","demonstration","march","rally","demo","vigil","activists","ceasefire"].some(k=>t.includes(k));
+      const topic=["palestine","palestinian","gaza","israel","west bank","hamas","rafah","jenin"].some(k=>t.includes(k));
+      const london=["london","westminster","uk ","britain","british","trafalgar","downing"].some(k=>t.includes(k));
+      if(topic&&protest&&london) return 3;
+      if(topic&&protest) return 2;
+      if(topic) return 1;
+      return 0;
+    }
+
+    async function fetchFeed(feed, urlIdx=0, attempt=0) {
+      const url = feed.urls[urlIdx];
+      try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(13000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        if (data.status !== "ok") throw new Error(data.message || "RSS שגיאה");
+        return { ok:true, items: data.items||[], feed };
+      } catch(e) {
+        if (attempt < 1) {
+          await new Promise(r=>setTimeout(r,700*(attempt+1)));
+          return fetchFeed(feed, urlIdx, attempt+1);
+        }
+        if (urlIdx + 1 < feed.urls.length) {
+          return fetchFeed(feed, urlIdx+1, 0);
+        }
+        return { ok:false, error: e.message, feed };
+      }
+    }
+
+    class ErrorBoundary extends Component {
+      state = { err: null };
+      static getDerivedStateFromError(e) { return { err: e.message }; }
+      render() {
+        if (this.state.err) return (
+          <div style={{padding:32,color:"#ff6b6b",fontFamily:"Heebo,sans-serif",fontSize:14,direction:"rtl"}}>
+            <strong>שגיאה לא צפויה:</strong> {this.state.err}
+            <br/>
+            <button onClick={()=>this.setState({err:null})} style={{marginTop:12,padding:"8px 16px",cursor:"pointer",background:"#c9a84c",border:"none",borderRadius:4,fontFamily:"Heebo,sans-serif"}}>
+              נסה שוב
+            </button>
+          </div>
+        );
+        return this.props.children;
+      }
+    }
+
+    const CSS = `
+      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --bg:#080909; --bg2:#0f1113; --bg3:#161a1d;
+        --border:rgba(255,255,255,0.07); --bord2:rgba(255,255,255,0.13);
+        --text:#f0ede6; --text2:#9aa0ab; --text3:#50575f;
+        --gold:#c9a84c; --green:#3d8a5f;
+      }
+      html { direction: rtl; }
+      html, body { background:#080909 !important; color:#f0ede6 !important; font-family:'Heebo',sans-serif !important; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+      a { color:inherit; text-decoration:none; }
+      button { font-family:'Heebo',sans-serif; cursor:pointer; }
+      .bar { position:sticky; top:0; z-index:200; background:rgba(8,9,9,0.96); border-bottom:1px solid var(--border); backdrop-filter:blur(16px); padding:0 24px; height:50px; display:flex; align-items:center; justify-content:space-between; }
+      .logo { font-size:17px; font-weight:800; color:var(--gold); letter-spacing:-0.3px; }
+      .bar-left { display:flex; align-items:center; gap:16px; }
+      .bar-date { font-size:11px; color:var(--text3); letter-spacing:0.5px; }
+      .live { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--green); font-weight:600; letter-spacing:1px; }
+      .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:blink 2s infinite; }
+      @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+      .hero { padding:52px 24px 38px; border-bottom:1px solid var(--border); background:linear-gradient(160deg,rgba(201,168,76,0.05) 0%,transparent 50%); position:relative; overflow:hidden; }
+      .hero::after { content:''; position:absolute; top:-80px; left:-60px; width:350px; height:350px; border-radius:50%; background:radial-gradient(ellipse,rgba(201,168,76,0.07) 0%,transparent 70%); pointer-events:none; }
+      .hero-tag { font-size:11px; font-weight:600; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:18px; opacity:0; animation:up .5s .1s forwards; }
+      .hero-h1 { font-size:clamp(32px,6vw,54px); font-weight:800; line-height:1.1; color:#f0ede6; margin-bottom:14px; opacity:0; animation:up .5s .2s forwards; }
+      .hero-h1 span { color:var(--gold); }
+      .hero-sub { font-size:14px; color:#9aa0ab; max-width:520px; line-height:1.75; opacity:0; animation:up .5s .3s forwards; font-weight:300; }
+      @keyframes up { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+      .tabs { display:flex; border-bottom:1px solid var(--border); background:var(--bg); padding:0 24px; position:sticky; top:50px; z-index:100; overflow-x:auto; scrollbar-width:none; }
+      .tabs::-webkit-scrollbar { display:none; }
+      .tab { padding:15px 22px; font-size:13px; font-weight:500; color:var(--text3); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; transition:color .18s,border-color .18s; }
+      .tab:hover { color:var(--text2); }
+      .tab.on { color:var(--gold); border-bottom-color:var(--gold); }
+      .page { padding:32px 24px; max-width:960px; margin:0 auto; }
+      .sec-h { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:22px; flex-wrap:wrap; }
+      .sec-title { font-size:22px; font-weight:700; color:#f0ede6; }
+      .sec-count { font-size:11px; color:var(--text3); letter-spacing:1px; }
+      .toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+      .toolbar-r { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .refresh { display:inline-flex; align-items:center; gap:8px; background:var(--gold); color:#080909; border:none; padding:9px 20px; font-weight:700; font-size:13px; border-radius:4px; transition:background .18s,transform .1s; }
+      .refresh:hover:not(:disabled) { background:#ddb94e; transform:translateY(-1px); }
+      .refresh:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+      .status { font-size:12px; font-weight:500; padding:5px 12px; border-radius:20px; }
+      .status-ok { background:rgba(61,138,95,.12); color:#4aad7a; }
+      .status-warn { background:rgba(201,168,76,.12); color:var(--gold); }
+      .status-err { background:rgba(192,57,43,.12); color:#e74c3c; }
+      .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:22px; }
+      .pill { padding:5px 14px; font-size:12px; font-weight:500; border:1px solid var(--bord2); background:none; color:var(--text2); border-radius:20px; transition:all .15s; }
+      .pill:hover { border-color:var(--gold); color:var(--gold); }
+      .pill.on { background:var(--gold); color:#080909; border-color:var(--gold); }
+      .err-box { padding:16px 20px; margin-bottom:18px; background:rgba(192,57,43,.08); border:1px solid rgba(192,57,43,.25); border-radius:4px; font-size:13px; color:#e74c3c; line-height:1.7; }
+      .fallback-banner { padding:12px 18px; margin-bottom:18px; background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.2); border-radius:4px; font-size:12px; color:var(--gold); display:flex; align-items:center; gap:8px; }
+      @keyframes shimmer { to{background-position:200% center} }
+      .skel { border-radius:3px; background:linear-gradient(90deg,var(--bg3) 25%,var(--bg2) 50%,var(--bg3) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+      .skel-list { border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+      .skel-row { padding:22px; border-bottom:1px solid var(--border); background:var(--bg2); }
+      .news-list { border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+      .news-item { display:block; padding:20px 22px; background:var(--bg2); border-bottom:1px solid var(--border); transition:background .15s; }
+      .news-item:last-child { border-bottom:none; }
+      .news-item:hover { background:var(--bg3); }
+      .news-row { display:flex; gap:14px; align-items:flex-start; }
+      .news-body { flex:1; min-width:0; }
+      .news-meta { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
+      .src-badge { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:2px 8px; border-radius:3px; }
+      .time { font-size:11px; color:var(--text3); }
+      .rel-badge { font-size:10px; padding:2px 7px; border-radius:3px; font-weight:600; }
+      .rel-3 { background:rgba(201,168,76,.12); color:var(--gold); border:1px solid rgba(201,168,76,.2); }
+      .rel-2 { background:rgba(61,138,95,.12); color:#4aad7a; border:1px solid rgba(61,138,95,.2); }
+      .news-title { font-size:16px; font-weight:700; color:#f0ede6; line-height:1.35; margin-bottom:6px; }
+      .news-desc { font-size:12px; color:#9aa0ab; line-height:1.65; }
+      .news-arrow { color:var(--gold); font-size:18px; opacity:.3; flex-shrink:0; margin-top:2px; transition:opacity .15s; }
+      .news-item:hover .news-arrow { opacity:.8; }
+      .empty { padding:48px 24px; text-align:center; color:var(--text3); font-size:14px; border:1px dashed var(--bord2); border-radius:4px; }
+      .empty strong { display:block; font-size:16px; color:var(--text2); margin-bottom:8px; }
+      .debug { margin-top:18px; padding:14px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:4px; font-size:11px; color:var(--text3); line-height:2; }
+      .d-ok { color:var(--green); }
+      .d-err { color:#e74c3c; }
+      .ev-card { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:28px; margin-bottom:14px; }
+      .ev-tag { font-size:10px; font-weight:700; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; }
+      .ev-title { font-size:20px; font-weight:700; color:#f0ede6; margin-bottom:8px; }
+      .ev-desc { font-size:13px; color:#9aa0ab; line-height:1.75; margin-bottom:20px; }
+      .ev-link { display:inline-flex; align-items:center; gap:8px; background:var(--gold); color:#080909; padding:10px 22px; font-weight:700; font-size:13px; border-radius:4px; transition:background .18s; }
+      .ev-link:hover { background:#ddb94e; }
+      .ig-notice { padding:14px 18px; margin-bottom:20px; background:rgba(201,168,76,.07); border:1px solid rgba(201,168,76,.2); border-radius:4px; font-size:13px; color:#9aa0ab; line-height:1.7; }
+      .ig-notice strong { color:var(--gold); }
+      .ig-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1px; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+      .ig-card { background:var(--bg2); padding:20px; display:flex; flex-direction:column; gap:8px; transition:background .15s; }
+      .ig-card:hover { background:var(--bg3); }
+      .ig-row { display:flex; align-items:center; gap:10px; }
+      .ig-av { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--green)); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:#fff; flex-shrink:0; }
+      .ig-handle { font-size:13px; font-weight:700; color:#f0ede6; }
+      .ig-tag-label { font-size:10px; font-weight:600; letter-spacing:1px; padding:2px 6px; background:var(--bg3); color:var(--text3); border-radius:3px; text-transform:uppercase; }
+      .ig-desc { font-size:12px; color:#9aa0ab; line-height:1.5; }
+      .ig-open { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--gold); margin-top:4px; transition:opacity .15s; }
+      .ig-open:hover { opacity:.65; }
+      .footer { margin-top:64px; border-top:1px solid var(--border); padding:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+      .footer-logo { font-size:14px; font-weight:700; color:var(--text3); }
+      .footer-src { font-size:11px; color:var(--text3); letter-spacing:.5px; }
+      @media(max-width:600px){ .hero{padding:36px 16px 28px;} .page{padding:24px 16px;} .bar,.tabs{padding:0 16px;} .news-item{padding:16px;} .ev-card{padding:20px;} }
+    `;
+
+    function Skeleton() {
+      return (
+        <div className="skel-list">
+          {[1,.85,.7,.9,.6].map((o,i)=>(
+            <div key={i} className="skel-row" style={{opacity:o}}>
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                <div className="skel" style={{width:64,height:18,borderRadius:3}}/>
+                <div className="skel" style={{width:90,height:18,borderRadius:3}}/>
+              </div>
+              <div className="skel" style={{width:"88%",height:22,marginBottom:8}}/>
+              <div className="skel" style={{width:"68%",height:22,marginBottom:10}}/>
+              <div className="skel" style={{width:"100%",height:14,marginBottom:5}}/>
+              <div className="skel" style={{width:"80%",height:14}}/>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function App() {
+      const [tab,      setTab]      = useState(0);
+      const [loading,  setLoading]  = useState(false);
+      const [news,     setNews]     = useState(null);
+      const [isFallback, setIsFallback] = useState(false);
+      const [errors,   setErrors]   = useState([]);
+      const [filter,   setFilter]   = useState("הכל");
+      const [updated,  setUpdated]  = useState(null);
+      const [logs,     setLogs]     = useState([]);
+
+      const fetchNews = useCallback(async () => {
+        setLoading(true);
+        setErrors([]);
+        setIsFallback(false);
+
+        try {
+          const c = localStorage.getItem("hub_news_he");
+          if (c) {
+            const { data, ts } = JSON.parse(c);
+            if (Date.now()-ts < 5*60*1000 && data?.length > 0) {
+              setNews(data);
+              setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
+              setLogs(["✓ נטען מהמטמון (פחות מ-5 דקות)"]);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {}
+
+        const newLogs = [];
+        const errs    = [];
+        const found   = [];
+
+        const results = await Promise.all(FEEDS.map(f => fetchFeed(f)));
+
+        results.forEach(res => {
+          if (res.ok) {
+            let matched = 0;
+            (res.items||[]).forEach(item => {
+              const combined = (item.title||"") + " " + stripHtml(item.description||"");
+              const s = score(combined);
+              if (s > 0) {
+                matched++;
+                found.push({
+                  title:  item.title || "ללא כותרת",
+                  desc:   stripHtml(item.description||"").slice(0,200),
+                  link:   item.link || "#",
+                  date:   item.pubDate || new Date().toISOString(),
+                  source: res.feed.name,
+                  color:  res.feed.color,
+                  score:  s,
+                });
+              }
+            });
+            newLogs.push(`✓ ${res.feed.name}: ${res.items.length} פריטים · ${matched} רלוונטיים`);
+          } else {
+            errs.push(res.feed.name + ": " + res.error);
+            newLogs.push(`✗ ${res.feed.name}: ${res.error}`);
+          }
+        });
+
+        found.sort((a,b) => b.score-a.score || new Date(b.date)-new Date(a.date));
+
+        setLogs(newLogs);
+        setErrors(errs);
+
+        const ts = Date.now();
+        if (found.length > 0) {
+          setNews(found);
+          setIsFallback(false);
+          setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
+          try { localStorage.setItem("hub_news_he", JSON.stringify({ data:found, ts })); } catch {}
+        } else {
+          setNews(FALLBACK);
+          setIsFallback(true);
+          setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
+        }
+
+        setLoading(false);
+      }, []);
+
+      useEffect(()=>{ fetchNews(); }, [fetchNews]);
+
+      const FILTER_OPTS = ["הכל", ...FEEDS.map(f=>f.name)];
+      const shown = filter==="הכל" ? news : news?.filter(n=>n.source===filter);
+      const today = new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+      return (
+        <ErrorBoundary>
+          <style>{CSS}</style>
+          <div dir="rtl" style={{minHeight:"100vh",background:"#080909",color:"#f0ede6"}}>
+
+            <div className="bar">
+              <div className="logo">מרכז המעקב · לונדון</div>
+              <div className="bar-left">
+                <div className="bar-date">{today}</div>
+                <div className="live"><span className="live-dot"/>חי</div>
+              </div>
+            </div>
+
+            <div className="hero">
+              <div className="hero-tag">// מעקב יומי // לונדון // בריטניה</div>
+              <h1 className="hero-h1">הפגנות <span>פרו-פלסטיניות</span><br/>בלונדון</h1>
+              <p className="hero-sub">אגרגטור חדשות ואירועים בזמן אמת — Al Jazeera, BBC, Guardian, Independent ועוד</p>
+            </div>
+
+            <div className="tabs">
+              {["חדשות","אירועים","אינסטגרם"].map((t,i)=>(
+                <button key={i} className={`tab${tab===i?" on":""}`} onClick={()=>setTab(i)}>{t}</button>
+              ))}
+            </div>
+
+            <div className="page">
+              <ErrorBoundary>
+
+                {tab===0 && <>
+                  <div className="sec-h">
+                    <div className="sec-title">חדשות עדכניות</div>
+                    {news && <div className="sec-count">{shown?.length||0} כתבות</div>}
+                  </div>
+
+                  <div className="toolbar">
+                    <div className="toolbar-r">
+                      <button className="refresh" onClick={fetchNews} disabled={loading}>
+                        {loading ? <>
+                          <svg width="14" height="14" viewBox="0 0 14 14" style={{animation:"spin .7s linear infinite",flexShrink:0}}>
+                            <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+                            <circle cx="7" cy="7" r="5.5" stroke="#080909" strokeWidth="2.5" fill="none" strokeDasharray="22" strokeDashoffset="6"/>
+                          </svg>
+                          טוען...
+                        </> : <>↻ רענן חדשות</>}
+                      </button>
+                      {updated && !loading && (
+                        <span className={`status ${isFallback?"status-warn":"status-ok"}`}>
+                          {isFallback ? "⚠ מציג נתונים לדוגמה" : `✓ עודכן ${updated}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {errors.length>0 && !isFallback && (
+                    <div className="err-box">
+                      ⚠ לא הצלחנו לטעון חלק מהמקורות — מוצגים תוצאות חלקיות:<br/>
+                      {errors.map((e,i)=><span key={i} style={{display:"block",opacity:.7,fontSize:12}}>· {e}</span>)}
+                    </div>
+                  )}
+
+                  {isFallback && (
+                    <div className="fallback-banner">
+                      ⚠ לא הצלחנו לטעון חדשות כרגע — מוצגות כתבות לדוגמה. לחץ "רענן" לנסות שוב.
+                    </div>
+                  )}
+
+                  {loading && <Skeleton/>}
+
+                  {news && !loading && (
+                    <div className="filters">
+                      {FILTER_OPTS.map(f=>(
+                        <button key={f} className={`pill${filter===f?" on":""}`} onClick={()=>setFilter(f)}>{f}</button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!loading && shown?.length>0 && (
+                    <div className="news-list">
+                      {shown.map((item,i)=>(
+                        <a key={i} className="news-item" href={item.link} target="_blank" rel="noreferrer">
+                          <div className="news-row">
+                            <div className="news-body">
+                              <div className="news-meta">
+                                <span className="src-badge" style={{background:`${item.color}18`,color:item.color,border:`1px solid ${item.color}30`}}>
+                                  {item.source}
+                                </span>
+                                <span className="time">{timeAgo(item.date)}</span>
+                                {item.score===3 && <span className="rel-badge rel-3">לונדון</span>}
+                                {item.score===2 && <span className="rel-badge rel-2">הפגנה</span>}
+                              </div>
+                              <div className="news-title">{item.title}</div>
+                              {item.desc && <div className="news-desc">{item.desc}{item.desc.length>=200?"…":""}</div>}
+                            </div>
+                            <div className="news-arrow">←</div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {!loading && shown?.length===0 && (
+                    <div className="empty">
+                      <strong>לא נמצאו כתבות</strong>
+                      נסה פילטר אחר או לחץ על "רענן".
+                    </div>
+                  )}
+
+                  {logs.length>0 && !loading && (
+                    <div className="debug">
+                      {logs.map((l,i)=><div key={i} className={l.startsWith("✓")?"d-ok":"d-err"}>{l}</div>)}
+                    </div>
+                  )}
+                </>}
+
+                {tab===1 && <>
+                  <div className="sec-h"><div className="sec-title">אירועים קרובים</div></div>
+                  <div className="ev-card">
+                    <div className="ev-tag">// Palestine Solidarity Campaign //</div>
+                    <div className="ev-title">PSC — אירועים בלונדון ובבריטניה</div>
+                    <div className="ev-desc">PSC הוא הארגון הגדול ביותר לסולידריות עם פלסטין בבריטניה. הם מפרסמים את כל ההפגנות, המצעדים, הוויג'ילים ואירועי הקמפיין בלונדון.</div>
+                    <a className="ev-link" href="https://palestinecampaign.org/events/" target="_blank" rel="noreferrer">← פתח: palestinecampaign.org/events</a>
+                  </div>
+                  <div className="ev-card">
+                    <div className="ev-tag">// Stop the War Coalition //</div>
+                    <div className="ev-title">STWC — עצרו את המלחמה</div>
+                    <div className="ev-desc">ארגון נגד מלחמה המארגן הפגנות ענק בלונדון לעיתים קרובות בשיתוף עם PSC. לוח האירועים שלהם מציג אירועים שלא תמיד מופיעים ב-PSC.</div>
+                    <a className="ev-link" href="https://www.stopwar.org.uk/events/" target="_blank" rel="noreferrer">← פתח: stopwar.org.uk/events</a>
+                  </div>
+                  <div className="ev-card">
+                    <div className="ev-tag">// Friends of Al-Aqsa //</div>
+                    <div className="ev-title">FOA — חברים של אל-אקצא</div>
+                    <div className="ev-desc">ארגון המתמקד בירושלים וזכויות פלסטיניות, מארגן אירועים, לובינג ופעולות ישירות ברחבי בריטניה.</div>
+                    <a className="ev-link" href="https://www.foa.org.uk/events" target="_blank" rel="noreferrer">← פתח: foa.org.uk/events</a>
+                  </div>
+                </>}
+
+                {tab===2 && <>
+                  <div className="sec-h">
+                    <div className="sec-title">חשבונות אינסטגרם</div>
+                    <div className="sec-count">{IG_ACCOUNTS.length} חשבונות</div>
+                  </div>
+                  <div className="ig-notice">
+                    <strong>⚠ בדיקה ידנית בלבד</strong> — Meta חוסמת כל גישה אוטומטית לאינסטגרם.
+                    לחץ "פתח" כדי לבדוק כל חשבון. מומלץ לעקוב אחריהם ישירות לעדכונים יומיים.
+                  </div>
+                  <div className="ig-grid">
+                    {IG_ACCOUNTS.map((acc,i)=>(
+                      <div key={i} className="ig-card">
+                        <div className="ig-row">
+                          <div className="ig-av">{acc.handle[0].toUpperCase()}</div>
+                          <div>
+                            <div className="ig-handle">@{acc.handle}</div>
+                            <span className="ig-tag-label">{acc.tag}</span>
+                          </div>
+                        </div>
+                        <div className="ig-desc">{acc.desc}</div>
+                        <a className="ig-open" href={acc.url} target="_blank" rel="noreferrer">פתח באינסטגרם ←</a>
+                      </div>
+                    ))}
+                  </div>
+                </>}
+
+              </ErrorBoundary>
+            </div>
+
+            <div className="footer">
+              <div className="footer-logo">מרכז המעקב · לונדון</div>
+              <div className="footer-src">Al Jazeera · BBC · Guardian · Independent · Reuters · Middle East Eye</div>
+            </div>
+
+          </div>
+        </ErrorBoundary>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App/>);
+  </script>
+</body>
+</html>
