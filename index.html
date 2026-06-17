@@ -4,147 +4,217 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>מרכז המעקב · לונדון</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="react">
-    const { useState, useEffect, useCallback, Component } = React;
-
-    const FALLBACK = [
-      {
-        title: "צעדה פרו-פלסטינית ענקית במרכז לונדון — עשרות אלפי משתתפים",
-        desc: "מפגינים צעדו מהייד פארק לכיכר הפרלמנט בקריאה להפסקת אש בעזה. המשטרה העריכה כ-40,000 משתתפים שנאספו בקריאה לאמברגו נשק על ישראל.",
-        source: "Guardian", color: "#4a9d7a", date: new Date(Date.now()-3600000*2).toISOString(), link: "https://palestinecampaign.org/events/", score: 3,
-      },
-      {
-        title: "PSC מכריזה על סדרת הפגנות שבועיות מחוץ לפרלמנט הבריטי",
-        desc: "ארגון PSC הכריז על ויג'ילים שבועיים ליד ווסטמינסטר, בדרישה שממשלת בריטניה תטיל אמברגו נשק על ישראל.",
-        source: "PSC", color: "#c9a84c", date: new Date(Date.now()-3600000*5).toISOString(), link: "https://palestinecampaign.org/events/", score: 3,
-      },
-      {
-        title: "מספר הנפגעים בעזה עולה על 50,000 בעוד שיחות הפסקת האש נתקלות בקשיים",
-        desc: "סוכנויות האו\"ם מזהירות מפני מצב הומניטרי קטסטרופלי, בעוד מגשרים בינלאומיים מתקשים לחדש את המשא ומתן.",
-        source: "Al Jazeera", color: "#e8a020", date: new Date(Date.now()-3600000*7).toISOString(), link: "https://www.aljazeera.com", score: 2,
-      },
-      {
-        title: "עובדי NHS לונדון מפגינים מחוץ למשרד הבריאות למען פלסטין",
-        desc: "מאות עובדי שירות הבריאות הלאומי התכנסו ברחבי לונדון בקריאה לסיום מיידי של הפעולות הצבאיות הישראליות בעזה.",
-        source: "BBC", color: "#c0392b", date: new Date(Date.now()-3600000*11).toISOString(), link: "https://www.bbc.co.uk", score: 3,
-      },
-      {
-        title: "סטודנטים ב-UCL וב-SOAS מחדשים מחנות הסולידריות",
-        desc: "סטודנטים הקימו מחדש מחנות מחאה בשתי אוניברסיטאות לונדוניות ומתחדשים בדרישות לניתוק השקעות מחברות ישראליות.",
-        source: "Independent", color: "#7b68ee", date: new Date(Date.now()-3600000*18).toISOString(), link: "https://www.independent.co.uk", score: 2,
-      },
-      {
-        title: "בריטניה שוקלת סנקציות נוספות על ישראל בעקבות לחץ פרלמנטרי",
-        desc: "חברי פרלמנט מהאגף השמאלי קוראים לממשלה להרחיב את הגבלות הנשק ולהכיר בפשעי מלחמה נגד אזרחים פלסטינים.",
-        source: "Guardian", color: "#4a9d7a", date: new Date(Date.now()-3600000*22).toISOString(), link: "https://www.theguardian.com", score: 1,
-      },
-    ];
-
-    const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
-    const FEEDS = [
-      { name: "Al Jazeera", color: "#e8a020", urls: [
-        R2J + encodeURIComponent("https://www.aljazeera.com/xml/rss/all.xml"),
-        R2J + encodeURIComponent("https://www.aljazeera.com/feed/"),
-      ]},
-      { name: "BBC", color: "#c0392b", urls: [
-        R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/world/rss.xml"),
-        R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/rss.xml"),
-      ]},
-      { name: "Guardian", color: "#4a9d7a", urls: [
-        R2J + encodeURIComponent("https://www.theguardian.com/world/rss"),
-        R2J + encodeURIComponent("https://www.theguardian.com/uk/rss"),
-      ]},
-      { name: "Independent", color: "#7b68ee", urls: [
-        R2J + encodeURIComponent("https://www.independent.co.uk/news/world/rss"),
-        R2J + encodeURIComponent("https://www.independent.co.uk/rss"),
-      ]},
-      { name: "Reuters", color: "#ff6600", urls: [
-        R2J + encodeURIComponent("https://feeds.reuters.com/reuters/worldNews"),
-        R2J + encodeURIComponent("https://feeds.reuters.com/reuters/topNews"),
-      ]},
-      { name: "Middle East Eye", color: "#00a651", urls: [
-        R2J + encodeURIComponent("https://www.middleeasteye.net/rss"),
-      ]},
-    ];
-
-    const IG_ACCOUNTS = [
-      { handle: "palestinesolidarityuk", desc: "PSC UK — הארגון הראשי לסולידריות", tag: "ראשי", url: "https://www.instagram.com/palestinesolidarityuk" },
-      { handle: "healthworkersandallies4pal", desc: "עובדי בריאות ועמיתים למען פלסטין", tag: "בריאות", url: "https://www.instagram.com/healthworkersandallies4pal" },
-      { handle: "actionswithimpact", desc: "פעולות עם השפעה — הפגנות ואקטיביזם", tag: "פעולה", url: "https://www.instagram.com/actionswithimpact/" },
-      { handle: "lewishamgreenwichcnd", desc: "Lewisham & Greenwich CND — נגד נשק גרעיני", tag: "מקומי", url: "https://www.instagram.com/lewishamgreenwichcnd/" },
-      { handle: "uclactionforpalestine", desc: "UCL — אקטיביזם סטודנטיאלי אוניברסיטת לונדון", tag: "סטודנטים", url: "https://www.instagram.com/uclactionforpalestine/" },
-      { handle: "soasliberatedzone", desc: "SOAS לונדון — אזור משוחרר", tag: "סטודנטים", url: "https://www.instagram.com/soasliberatedzone" },
-      { handle: "ijan_uk", desc: "IJAN UK — יהודים נגד אפרטהייד", tag: "יהודי", url: "https://www.instagram.com/ijan_uk" },
-    ];
-
-    function stripHtml(h) {
-      return (h||"").replace(/<[^>]*>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&nbsp;/g," ").replace(/&quot;/g,'"').trim();
+  <script>
+const {
+  useState,
+  useEffect,
+  useCallback,
+  Component
+} = React;
+const FALLBACK = [{
+  title: "צעדה פרו-פלסטינית ענקית במרכז לונדון — עשרות אלפי משתתפים",
+  desc: "מפגינים צעדו מהייד פארק לכיכר הפרלמנט בקריאה להפסקת אש בעזה. המשטרה העריכה כ-40,000 משתתפים שנאספו בקריאה לאמברגו נשק על ישראל.",
+  source: "Guardian",
+  color: "#4a9d7a",
+  date: new Date(Date.now() - 3600000 * 2).toISOString(),
+  link: "https://palestinecampaign.org/events/",
+  score: 3
+}, {
+  title: "PSC מכריזה על סדרת הפגנות שבועיות מחוץ לפרלמנט הבריטי",
+  desc: "ארגון PSC הכריז על ויג'ילים שבועיים ליד ווסטמינסטר, בדרישה שממשלת בריטניה תטיל אמברגו נשק על ישראל.",
+  source: "PSC",
+  color: "#c9a84c",
+  date: new Date(Date.now() - 3600000 * 5).toISOString(),
+  link: "https://palestinecampaign.org/events/",
+  score: 3
+}, {
+  title: "מספר הנפגעים בעזה עולה על 50,000 בעוד שיחות הפסקת האש נתקלות בקשיים",
+  desc: "סוכנויות האו\"ם מזהירות מפני מצב הומניטרי קטסטרופלי, בעוד מגשרים בינלאומיים מתקשים לחדש את המשא ומתן.",
+  source: "Al Jazeera",
+  color: "#e8a020",
+  date: new Date(Date.now() - 3600000 * 7).toISOString(),
+  link: "https://www.aljazeera.com",
+  score: 2
+}, {
+  title: "עובדי NHS לונדון מפגינים מחוץ למשרד הבריאות למען פלסטין",
+  desc: "מאות עובדי שירות הבריאות הלאומי התכנסו ברחבי לונדון בקריאה לסיום מיידי של הפעולות הצבאיות הישראליות בעזה.",
+  source: "BBC",
+  color: "#c0392b",
+  date: new Date(Date.now() - 3600000 * 11).toISOString(),
+  link: "https://www.bbc.co.uk",
+  score: 3
+}, {
+  title: "סטודנטים ב-UCL וב-SOAS מחדשים מחנות הסולידריות",
+  desc: "סטודנטים הקימו מחדש מחנות מחאה בשתי אוניברסיטאות לונדוניות ומתחדשים בדרישות לניתוק השקעות מחברות ישראליות.",
+  source: "Independent",
+  color: "#7b68ee",
+  date: new Date(Date.now() - 3600000 * 18).toISOString(),
+  link: "https://www.independent.co.uk",
+  score: 2
+}, {
+  title: "בריטניה שוקלת סנקציות נוספות על ישראל בעקבות לחץ פרלמנטרי",
+  desc: "חברי פרלמנט מהאגף השמאלי קוראים לממשלה להרחיב את הגבלות הנשק ולהכיר בפשעי מלחמה נגד אזרחים פלסטינים.",
+  source: "Guardian",
+  color: "#4a9d7a",
+  date: new Date(Date.now() - 3600000 * 22).toISOString(),
+  link: "https://www.theguardian.com",
+  score: 1
+}];
+const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
+const FEEDS = [{
+  name: "Al Jazeera",
+  color: "#e8a020",
+  urls: [R2J + encodeURIComponent("https://www.aljazeera.com/xml/rss/all.xml"), R2J + encodeURIComponent("https://www.aljazeera.com/feed/")]
+}, {
+  name: "BBC",
+  color: "#c0392b",
+  urls: [R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/world/rss.xml"), R2J + encodeURIComponent("https://feeds.bbci.co.uk/news/rss.xml")]
+}, {
+  name: "Guardian",
+  color: "#4a9d7a",
+  urls: [R2J + encodeURIComponent("https://www.theguardian.com/world/rss"), R2J + encodeURIComponent("https://www.theguardian.com/uk/rss")]
+}, {
+  name: "Independent",
+  color: "#7b68ee",
+  urls: [R2J + encodeURIComponent("https://www.independent.co.uk/news/world/rss"), R2J + encodeURIComponent("https://www.independent.co.uk/rss")]
+}, {
+  name: "Reuters",
+  color: "#ff6600",
+  urls: [R2J + encodeURIComponent("https://feeds.reuters.com/reuters/worldNews"), R2J + encodeURIComponent("https://feeds.reuters.com/reuters/topNews")]
+}, {
+  name: "Middle East Eye",
+  color: "#00a651",
+  urls: [R2J + encodeURIComponent("https://www.middleeasteye.net/rss")]
+}];
+const IG_ACCOUNTS = [{
+  handle: "palestinesolidarityuk",
+  desc: "PSC UK — הארגון הראשי לסולידריות",
+  tag: "ראשי",
+  url: "https://www.instagram.com/palestinesolidarityuk"
+}, {
+  handle: "healthworkersandallies4pal",
+  desc: "עובדי בריאות ועמיתים למען פלסטין",
+  tag: "בריאות",
+  url: "https://www.instagram.com/healthworkersandallies4pal"
+}, {
+  handle: "actionswithimpact",
+  desc: "פעולות עם השפעה — הפגנות ואקטיביזם",
+  tag: "פעולה",
+  url: "https://www.instagram.com/actionswithimpact/"
+}, {
+  handle: "lewishamgreenwichcnd",
+  desc: "Lewisham & Greenwich CND — נגד נשק גרעיני",
+  tag: "מקומי",
+  url: "https://www.instagram.com/lewishamgreenwichcnd/"
+}, {
+  handle: "uclactionforpalestine",
+  desc: "UCL — אקטיביזם סטודנטיאלי אוניברסיטת לונדון",
+  tag: "סטודנטים",
+  url: "https://www.instagram.com/uclactionforpalestine/"
+}, {
+  handle: "soasliberatedzone",
+  desc: "SOAS לונדון — אזור משוחרר",
+  tag: "סטודנטים",
+  url: "https://www.instagram.com/soasliberatedzone"
+}, {
+  handle: "ijan_uk",
+  desc: "IJAN UK — יהודים נגד אפרטהייד",
+  tag: "יהודי",
+  url: "https://www.instagram.com/ijan_uk"
+}];
+function stripHtml(h) {
+  return (h || "").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').trim();
+}
+function timeAgo(d) {
+  try {
+    const h = Math.floor((Date.now() - new Date(d)) / 3600000);
+    if (h < 1) return "לפני פחות משעה";
+    if (h < 24) return `לפני ${h} שעות`;
+    return `לפני ${Math.floor(h / 24)} ימים`;
+  } catch {
+    return "";
+  }
+}
+function score(text) {
+  const t = (text || "").toLowerCase();
+  const protest = ["protest", "demonstration", "march", "rally", "demo", "vigil", "activists", "ceasefire"].some(k => t.includes(k));
+  const topic = ["palestine", "palestinian", "gaza", "israel", "west bank", "hamas", "rafah", "jenin"].some(k => t.includes(k));
+  const london = ["london", "westminster", "uk ", "britain", "british", "trafalgar", "downing"].some(k => t.includes(k));
+  if (topic && protest && london) return 3;
+  if (topic && protest) return 2;
+  if (topic) return 1;
+  return 0;
+}
+async function fetchFeed(feed, urlIdx = 0, attempt = 0) {
+  const url = feed.urls[urlIdx];
+  try {
+    const r = await fetch(url, {
+      signal: AbortSignal.timeout(13000)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (data.status !== "ok") throw new Error(data.message || "RSS שגיאה");
+    return {
+      ok: true,
+      items: data.items || [],
+      feed
+    };
+  } catch (e) {
+    if (attempt < 1) {
+      await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+      return fetchFeed(feed, urlIdx, attempt + 1);
     }
-
-    function timeAgo(d) {
-      try {
-        const h = Math.floor((Date.now()-new Date(d))/3600000);
-        if (h<1) return "לפני פחות משעה";
-        if (h<24) return `לפני ${h} שעות`;
-        return `לפני ${Math.floor(h/24)} ימים`;
-      } catch { return ""; }
+    if (urlIdx + 1 < feed.urls.length) {
+      return fetchFeed(feed, urlIdx + 1, 0);
     }
-
-    function score(text) {
-      const t=(text||"").toLowerCase();
-      const protest=["protest","demonstration","march","rally","demo","vigil","activists","ceasefire"].some(k=>t.includes(k));
-      const topic=["palestine","palestinian","gaza","israel","west bank","hamas","rafah","jenin"].some(k=>t.includes(k));
-      const london=["london","westminster","uk ","britain","british","trafalgar","downing"].some(k=>t.includes(k));
-      if(topic&&protest&&london) return 3;
-      if(topic&&protest) return 2;
-      if(topic) return 1;
-      return 0;
-    }
-
-    async function fetchFeed(feed, urlIdx=0, attempt=0) {
-      const url = feed.urls[urlIdx];
-      try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(13000) });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data = await r.json();
-        if (data.status !== "ok") throw new Error(data.message || "RSS שגיאה");
-        return { ok:true, items: data.items||[], feed };
-      } catch(e) {
-        if (attempt < 1) {
-          await new Promise(r=>setTimeout(r,700*(attempt+1)));
-          return fetchFeed(feed, urlIdx, attempt+1);
-        }
-        if (urlIdx + 1 < feed.urls.length) {
-          return fetchFeed(feed, urlIdx+1, 0);
-        }
-        return { ok:false, error: e.message, feed };
+    return {
+      ok: false,
+      error: e.message,
+      feed
+    };
+  }
+}
+class ErrorBoundary extends Component {
+  state = {
+    err: null
+  };
+  static getDerivedStateFromError(e) {
+    return {
+      err: e.message
+    };
+  }
+  render() {
+    if (this.state.err) return /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: 32,
+        color: "#ff6b6b",
+        fontFamily: "Heebo,sans-serif",
+        fontSize: 14,
+        direction: "rtl"
       }
-    }
-
-    class ErrorBoundary extends Component {
-      state = { err: null };
-      static getDerivedStateFromError(e) { return { err: e.message }; }
-      render() {
-        if (this.state.err) return (
-          <div style={{padding:32,color:"#ff6b6b",fontFamily:"Heebo,sans-serif",fontSize:14,direction:"rtl"}}>
-            <strong>שגיאה לא צפויה:</strong> {this.state.err}
-            <br/>
-            <button onClick={()=>this.setState({err:null})} style={{marginTop:12,padding:"8px 16px",cursor:"pointer",background:"#c9a84c",border:"none",borderRadius:4,fontFamily:"Heebo,sans-serif"}}>
-              נסה שוב
-            </button>
-          </div>
-        );
-        return this.props.children;
+    }, /*#__PURE__*/React.createElement("strong", null, "שגיאה לא צפויה:"), " ", this.state.err, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
+      onClick: () => this.setState({
+        err: null
+      }),
+      style: {
+        marginTop: 12,
+        padding: "8px 16px",
+        cursor: "pointer",
+        background: "#c9a84c",
+        border: "none",
+        borderRadius: 4,
+        fontFamily: "Heebo,sans-serif"
       }
-    }
-
-    const CSS = `
+    }, "נסה שוב"));
+    return this.props.children;
+  }
+}
+const CSS = `
       @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       :root {
@@ -243,290 +313,360 @@
       .footer-src { font-size:11px; color:var(--text3); letter-spacing:.5px; }
       @media(max-width:600px){ .hero{padding:36px 16px 28px;} .page{padding:24px 16px;} .bar,.tabs{padding:0 16px;} .news-item{padding:16px;} .ev-card{padding:20px;} }
     `;
-
-    function Skeleton() {
-      return (
-        <div className="skel-list">
-          {[1,.85,.7,.9,.6].map((o,i)=>(
-            <div key={i} className="skel-row" style={{opacity:o}}>
-              <div style={{display:"flex",gap:8,marginBottom:10}}>
-                <div className="skel" style={{width:64,height:18,borderRadius:3}}/>
-                <div className="skel" style={{width:90,height:18,borderRadius:3}}/>
-              </div>
-              <div className="skel" style={{width:"88%",height:22,marginBottom:8}}/>
-              <div className="skel" style={{width:"68%",height:22,marginBottom:10}}/>
-              <div className="skel" style={{width:"100%",height:14,marginBottom:5}}/>
-              <div className="skel" style={{width:"80%",height:14}}/>
-            </div>
-          ))}
-        </div>
-      );
+function Skeleton() {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "skel-list"
+  }, [1, .85, .7, .9, .6].map((o, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "skel-row",
+    style: {
+      opacity: o
     }
-
-    function App() {
-      const [tab,      setTab]      = useState(0);
-      const [loading,  setLoading]  = useState(false);
-      const [news,     setNews]     = useState(null);
-      const [isFallback, setIsFallback] = useState(false);
-      const [errors,   setErrors]   = useState([]);
-      const [filter,   setFilter]   = useState("הכל");
-      const [updated,  setUpdated]  = useState(null);
-      const [logs,     setLogs]     = useState([]);
-
-      const fetchNews = useCallback(async () => {
-        setLoading(true);
-        setErrors([]);
-        setIsFallback(false);
-
-        try {
-          const c = localStorage.getItem("hub_news_he");
-          if (c) {
-            const { data, ts } = JSON.parse(c);
-            if (Date.now()-ts < 5*60*1000 && data?.length > 0) {
-              setNews(data);
-              setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
-              setLogs(["✓ נטען מהמטמון (פחות מ-5 דקות)"]);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch {}
-
-        const newLogs = [];
-        const errs    = [];
-        const found   = [];
-
-        const results = await Promise.all(FEEDS.map(f => fetchFeed(f)));
-
-        results.forEach(res => {
-          if (res.ok) {
-            let matched = 0;
-            (res.items||[]).forEach(item => {
-              const combined = (item.title||"") + " " + stripHtml(item.description||"");
-              const s = score(combined);
-              if (s > 0) {
-                matched++;
-                found.push({
-                  title:  item.title || "ללא כותרת",
-                  desc:   stripHtml(item.description||"").slice(0,200),
-                  link:   item.link || "#",
-                  date:   item.pubDate || new Date().toISOString(),
-                  source: res.feed.name,
-                  color:  res.feed.color,
-                  score:  s,
-                });
-              }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: 64,
+      height: 18,
+      borderRadius: 3
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: 90,
+      height: 18,
+      borderRadius: 3
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: "88%",
+      height: 22,
+      marginBottom: 8
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: "68%",
+      height: 22,
+      marginBottom: 10
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: "100%",
+      height: 14,
+      marginBottom: 5
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      width: "80%",
+      height: 14
+    }
+  }))));
+}
+function App() {
+  const [tab, setTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [news, setNews] = useState(null);
+  const [isFallback, setIsFallback] = useState(false);
+  const [errors, setErrors] = useState([]);
+  const [filter, setFilter] = useState("הכל");
+  const [updated, setUpdated] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const fetchNews = useCallback(async () => {
+    setLoading(true);
+    setErrors([]);
+    setIsFallback(false);
+    try {
+      const c = localStorage.getItem("hub_news_he");
+      if (c) {
+        const {
+          data,
+          ts
+        } = JSON.parse(c);
+        if (Date.now() - ts < 5 * 60 * 1000 && data?.length > 0) {
+          setNews(data);
+          setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
+          setLogs(["✓ נטען מהמטמון (פחות מ-5 דקות)"]);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {}
+    const newLogs = [];
+    const errs = [];
+    const found = [];
+    const results = await Promise.all(FEEDS.map(f => fetchFeed(f)));
+    results.forEach(res => {
+      if (res.ok) {
+        let matched = 0;
+        (res.items || []).forEach(item => {
+          const combined = (item.title || "") + " " + stripHtml(item.description || "");
+          const s = score(combined);
+          if (s > 0) {
+            matched++;
+            found.push({
+              title: item.title || "ללא כותרת",
+              desc: stripHtml(item.description || "").slice(0, 200),
+              link: item.link || "#",
+              date: item.pubDate || new Date().toISOString(),
+              source: res.feed.name,
+              color: res.feed.color,
+              score: s
             });
-            newLogs.push(`✓ ${res.feed.name}: ${res.items.length} פריטים · ${matched} רלוונטיים`);
-          } else {
-            errs.push(res.feed.name + ": " + res.error);
-            newLogs.push(`✗ ${res.feed.name}: ${res.error}`);
           }
         });
-
-        found.sort((a,b) => b.score-a.score || new Date(b.date)-new Date(a.date));
-
-        setLogs(newLogs);
-        setErrors(errs);
-
-        const ts = Date.now();
-        if (found.length > 0) {
-          setNews(found);
-          setIsFallback(false);
-          setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
-          try { localStorage.setItem("hub_news_he", JSON.stringify({ data:found, ts })); } catch {}
-        } else {
-          setNews(FALLBACK);
-          setIsFallback(true);
-          setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
-        }
-
-        setLoading(false);
-      }, []);
-
-      useEffect(()=>{ fetchNews(); }, [fetchNews]);
-
-      const FILTER_OPTS = ["הכל", ...FEEDS.map(f=>f.name)];
-      const shown = filter==="הכל" ? news : news?.filter(n=>n.source===filter);
-      const today = new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-
-      return (
-        <ErrorBoundary>
-          <style>{CSS}</style>
-          <div dir="rtl" style={{minHeight:"100vh",background:"#080909",color:"#f0ede6"}}>
-
-            <div className="bar">
-              <div className="logo">מרכז המעקב · לונדון</div>
-              <div className="bar-left">
-                <div className="bar-date">{today}</div>
-                <div className="live"><span className="live-dot"/>חי</div>
-              </div>
-            </div>
-
-            <div className="hero">
-              <div className="hero-tag">// מעקב יומי // לונדון // בריטניה</div>
-              <h1 className="hero-h1">הפגנות <span>פרו-פלסטיניות</span><br/>בלונדון</h1>
-              <p className="hero-sub">אגרגטור חדשות ואירועים בזמן אמת — Al Jazeera, BBC, Guardian, Independent ועוד</p>
-            </div>
-
-            <div className="tabs">
-              {["חדשות","אירועים","אינסטגרם"].map((t,i)=>(
-                <button key={i} className={`tab${tab===i?" on":""}`} onClick={()=>setTab(i)}>{t}</button>
-              ))}
-            </div>
-
-            <div className="page">
-              <ErrorBoundary>
-
-                {tab===0 && <>
-                  <div className="sec-h">
-                    <div className="sec-title">חדשות עדכניות</div>
-                    {news && <div className="sec-count">{shown?.length||0} כתבות</div>}
-                  </div>
-
-                  <div className="toolbar">
-                    <div className="toolbar-r">
-                      <button className="refresh" onClick={fetchNews} disabled={loading}>
-                        {loading ? <>
-                          <svg width="14" height="14" viewBox="0 0 14 14" style={{animation:"spin .7s linear infinite",flexShrink:0}}>
-                            <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
-                            <circle cx="7" cy="7" r="5.5" stroke="#080909" strokeWidth="2.5" fill="none" strokeDasharray="22" strokeDashoffset="6"/>
-                          </svg>
-                          טוען...
-                        </> : <>↻ רענן חדשות</>}
-                      </button>
-                      {updated && !loading && (
-                        <span className={`status ${isFallback?"status-warn":"status-ok"}`}>
-                          {isFallback ? "⚠ מציג נתונים לדוגמה" : `✓ עודכן ${updated}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {errors.length>0 && !isFallback && (
-                    <div className="err-box">
-                      ⚠ לא הצלחנו לטעון חלק מהמקורות — מוצגים תוצאות חלקיות:<br/>
-                      {errors.map((e,i)=><span key={i} style={{display:"block",opacity:.7,fontSize:12}}>· {e}</span>)}
-                    </div>
-                  )}
-
-                  {isFallback && (
-                    <div className="fallback-banner">
-                      ⚠ לא הצלחנו לטעון חדשות כרגע — מוצגות כתבות לדוגמה. לחץ "רענן" לנסות שוב.
-                    </div>
-                  )}
-
-                  {loading && <Skeleton/>}
-
-                  {news && !loading && (
-                    <div className="filters">
-                      {FILTER_OPTS.map(f=>(
-                        <button key={f} className={`pill${filter===f?" on":""}`} onClick={()=>setFilter(f)}>{f}</button>
-                      ))}
-                    </div>
-                  )}
-
-                  {!loading && shown?.length>0 && (
-                    <div className="news-list">
-                      {shown.map((item,i)=>(
-                        <a key={i} className="news-item" href={item.link} target="_blank" rel="noreferrer">
-                          <div className="news-row">
-                            <div className="news-body">
-                              <div className="news-meta">
-                                <span className="src-badge" style={{background:`${item.color}18`,color:item.color,border:`1px solid ${item.color}30`}}>
-                                  {item.source}
-                                </span>
-                                <span className="time">{timeAgo(item.date)}</span>
-                                {item.score===3 && <span className="rel-badge rel-3">לונדון</span>}
-                                {item.score===2 && <span className="rel-badge rel-2">הפגנה</span>}
-                              </div>
-                              <div className="news-title">{item.title}</div>
-                              {item.desc && <div className="news-desc">{item.desc}{item.desc.length>=200?"…":""}</div>}
-                            </div>
-                            <div className="news-arrow">←</div>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  )}
-
-                  {!loading && shown?.length===0 && (
-                    <div className="empty">
-                      <strong>לא נמצאו כתבות</strong>
-                      נסה פילטר אחר או לחץ על "רענן".
-                    </div>
-                  )}
-
-                  {logs.length>0 && !loading && (
-                    <div className="debug">
-                      {logs.map((l,i)=><div key={i} className={l.startsWith("✓")?"d-ok":"d-err"}>{l}</div>)}
-                    </div>
-                  )}
-                </>}
-
-                {tab===1 && <>
-                  <div className="sec-h"><div className="sec-title">אירועים קרובים</div></div>
-                  <div className="ev-card">
-                    <div className="ev-tag">// Palestine Solidarity Campaign //</div>
-                    <div className="ev-title">PSC — אירועים בלונדון ובבריטניה</div>
-                    <div className="ev-desc">PSC הוא הארגון הגדול ביותר לסולידריות עם פלסטין בבריטניה. הם מפרסמים את כל ההפגנות, המצעדים, הוויג'ילים ואירועי הקמפיין בלונדון.</div>
-                    <a className="ev-link" href="https://palestinecampaign.org/events/" target="_blank" rel="noreferrer">← פתח: palestinecampaign.org/events</a>
-                  </div>
-                  <div className="ev-card">
-                    <div className="ev-tag">// Stop the War Coalition //</div>
-                    <div className="ev-title">STWC — עצרו את המלחמה</div>
-                    <div className="ev-desc">ארגון נגד מלחמה המארגן הפגנות ענק בלונדון לעיתים קרובות בשיתוף עם PSC. לוח האירועים שלהם מציג אירועים שלא תמיד מופיעים ב-PSC.</div>
-                    <a className="ev-link" href="https://www.stopwar.org.uk/events/" target="_blank" rel="noreferrer">← פתח: stopwar.org.uk/events</a>
-                  </div>
-                  <div className="ev-card">
-                    <div className="ev-tag">// Friends of Al-Aqsa //</div>
-                    <div className="ev-title">FOA — חברים של אל-אקצא</div>
-                    <div className="ev-desc">ארגון המתמקד בירושלים וזכויות פלסטיניות, מארגן אירועים, לובינג ופעולות ישירות ברחבי בריטניה.</div>
-                    <a className="ev-link" href="https://www.foa.org.uk/events" target="_blank" rel="noreferrer">← פתח: foa.org.uk/events</a>
-                  </div>
-                </>}
-
-                {tab===2 && <>
-                  <div className="sec-h">
-                    <div className="sec-title">חשבונות אינסטגרם</div>
-                    <div className="sec-count">{IG_ACCOUNTS.length} חשבונות</div>
-                  </div>
-                  <div className="ig-notice">
-                    <strong>⚠ בדיקה ידנית בלבד</strong> — Meta חוסמת כל גישה אוטומטית לאינסטגרם.
-                    לחץ "פתח" כדי לבדוק כל חשבון. מומלץ לעקוב אחריהם ישירות לעדכונים יומיים.
-                  </div>
-                  <div className="ig-grid">
-                    {IG_ACCOUNTS.map((acc,i)=>(
-                      <div key={i} className="ig-card">
-                        <div className="ig-row">
-                          <div className="ig-av">{acc.handle[0].toUpperCase()}</div>
-                          <div>
-                            <div className="ig-handle">@{acc.handle}</div>
-                            <span className="ig-tag-label">{acc.tag}</span>
-                          </div>
-                        </div>
-                        <div className="ig-desc">{acc.desc}</div>
-                        <a className="ig-open" href={acc.url} target="_blank" rel="noreferrer">פתח באינסטגרם ←</a>
-                      </div>
-                    ))}
-                  </div>
-                </>}
-
-              </ErrorBoundary>
-            </div>
-
-            <div className="footer">
-              <div className="footer-logo">מרכז המעקב · לונדון</div>
-              <div className="footer-src">Al Jazeera · BBC · Guardian · Independent · Reuters · Middle East Eye</div>
-            </div>
-
-          </div>
-        </ErrorBoundary>
-      );
+        newLogs.push(`✓ ${res.feed.name}: ${res.items.length} פריטים · ${matched} רלוונטיים`);
+      } else {
+        errs.push(res.feed.name + ": " + res.error);
+        newLogs.push(`✗ ${res.feed.name}: ${res.error}`);
+      }
+    });
+    found.sort((a, b) => b.score - a.score || new Date(b.date) - new Date(a.date));
+    setLogs(newLogs);
+    setErrors(errs);
+    const ts = Date.now();
+    if (found.length > 0) {
+      setNews(found);
+      setIsFallback(false);
+      setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
+      try {
+        localStorage.setItem("hub_news_he", JSON.stringify({
+          data: found,
+          ts
+        }));
+      } catch {}
+    } else {
+      setNews(FALLBACK);
+      setIsFallback(true);
+      setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
     }
-
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App/>);
+    setLoading(false);
+  }, []);
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+  const FILTER_OPTS = ["הכל", ...FEEDS.map(f => f.name)];
+  const shown = filter === "הכל" ? news : news?.filter(n => n.source === filter);
+  const today = new Date().toLocaleDateString("he-IL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  return /*#__PURE__*/React.createElement(ErrorBoundary, null, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
+    dir: "rtl",
+    style: {
+      minHeight: "100vh",
+      background: "#080909",
+      color: "#f0ede6"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "logo"
+  }, "מרכז המעקב · לונדון"), /*#__PURE__*/React.createElement("div", {
+    className: "bar-left"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-date"
+  }, today), /*#__PURE__*/React.createElement("div", {
+    className: "live"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "live-dot"
+  }), "חי"))), /*#__PURE__*/React.createElement("div", {
+    className: "hero"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hero-tag"
+  }, "// מעקב יומי // לונדון // בריטניה"), /*#__PURE__*/React.createElement("h1", {
+    className: "hero-h1"
+  }, "הפגנות ", /*#__PURE__*/React.createElement("span", null, "פרו-פלסטיניות"), /*#__PURE__*/React.createElement("br", null), "בלונדון"), /*#__PURE__*/React.createElement("p", {
+    className: "hero-sub"
+  }, "אגרגטור חדשות ואירועים בזמן אמת — Al Jazeera, BBC, Guardian, Independent ועוד")), /*#__PURE__*/React.createElement("div", {
+    className: "tabs"
+  }, ["חדשות", "אירועים", "אינסטגרם"].map((t, i) => /*#__PURE__*/React.createElement("button", {
+    key: i,
+    className: `tab${tab === i ? " on" : ""}`,
+    onClick: () => setTab(i)
+  }, t))), /*#__PURE__*/React.createElement("div", {
+    className: "page"
+  }, /*#__PURE__*/React.createElement(ErrorBoundary, null, tab === 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "sec-h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sec-title"
+  }, "חדשות עדכניות"), news && /*#__PURE__*/React.createElement("div", {
+    className: "sec-count"
+  }, shown?.length || 0, " כתבות")), /*#__PURE__*/React.createElement("div", {
+    className: "toolbar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "toolbar-r"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "refresh",
+    onClick: fetchNews,
+    disabled: loading
+  }, loading ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 14 14",
+    style: {
+      animation: "spin .7s linear infinite",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("style", null, "@keyframes spin{to{transform:rotate(360deg)}}"), /*#__PURE__*/React.createElement("circle", {
+    cx: "7",
+    cy: "7",
+    r: "5.5",
+    stroke: "#080909",
+    strokeWidth: "2.5",
+    fill: "none",
+    strokeDasharray: "22",
+    strokeDashoffset: "6"
+  })), "טוען...") : /*#__PURE__*/React.createElement(React.Fragment, null, "↻ רענן חדשות")), updated && !loading && /*#__PURE__*/React.createElement("span", {
+    className: `status ${isFallback ? "status-warn" : "status-ok"}`
+  }, isFallback ? "⚠ מציג נתונים לדוגמה" : `✓ עודכן ${updated}`))), errors.length > 0 && !isFallback && /*#__PURE__*/React.createElement("div", {
+    className: "err-box"
+  }, "⚠ לא הצלחנו לטעון חלק מהמקורות — מוצגים תוצאות חלקיות:", /*#__PURE__*/React.createElement("br", null), errors.map((e, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    style: {
+      display: "block",
+      opacity: .7,
+      fontSize: 12
+    }
+  }, "· ", e))), isFallback && /*#__PURE__*/React.createElement("div", {
+    className: "fallback-banner"
+  }, "⚠ לא הצלחנו לטעון חדשות כרגע — מוצגות כתבות לדוגמה. לחץ \"רענן\" לנסות שוב."), loading && /*#__PURE__*/React.createElement(Skeleton, null), news && !loading && /*#__PURE__*/React.createElement("div", {
+    className: "filters"
+  }, FILTER_OPTS.map(f => /*#__PURE__*/React.createElement("button", {
+    key: f,
+    className: `pill${filter === f ? " on" : ""}`,
+    onClick: () => setFilter(f)
+  }, f))), !loading && shown?.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "news-list"
+  }, shown.map((item, i) => /*#__PURE__*/React.createElement("a", {
+    key: i,
+    className: "news-item",
+    href: item.link,
+    target: "_blank",
+    rel: "noreferrer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "news-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "news-body"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "news-meta"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "src-badge",
+    style: {
+      background: `${item.color}18`,
+      color: item.color,
+      border: `1px solid ${item.color}30`
+    }
+  }, item.source), /*#__PURE__*/React.createElement("span", {
+    className: "time"
+  }, timeAgo(item.date)), item.score === 3 && /*#__PURE__*/React.createElement("span", {
+    className: "rel-badge rel-3"
+  }, "לונדון"), item.score === 2 && /*#__PURE__*/React.createElement("span", {
+    className: "rel-badge rel-2"
+  }, "הפגנה")), /*#__PURE__*/React.createElement("div", {
+    className: "news-title"
+  }, item.title), item.desc && /*#__PURE__*/React.createElement("div", {
+    className: "news-desc"
+  }, item.desc, item.desc.length >= 200 ? "…" : "")), /*#__PURE__*/React.createElement("div", {
+    className: "news-arrow"
+  }, "←"))))), !loading && shown?.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, /*#__PURE__*/React.createElement("strong", null, "לא נמצאו כתבות"), "נסה פילטר אחר או לחץ על \"רענן\"."), logs.length > 0 && !loading && /*#__PURE__*/React.createElement("div", {
+    className: "debug"
+  }, logs.map((l, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: l.startsWith("✓") ? "d-ok" : "d-err"
+  }, l)))), tab === 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "sec-h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sec-title"
+  }, "אירועים קרובים")), /*#__PURE__*/React.createElement("div", {
+    className: "ev-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ev-tag"
+  }, "// Palestine Solidarity Campaign //"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-title"
+  }, "PSC — אירועים בלונדון ובבריטניה"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-desc"
+  }, "PSC הוא הארגון הגדול ביותר לסולידריות עם פלסטין בבריטניה. הם מפרסמים את כל ההפגנות, המצעדים, הוויג'ילים ואירועי הקמפיין בלונדון."), /*#__PURE__*/React.createElement("a", {
+    className: "ev-link",
+    href: "https://palestinecampaign.org/events/",
+    target: "_blank",
+    rel: "noreferrer"
+  }, "← פתח: palestinecampaign.org/events")), /*#__PURE__*/React.createElement("div", {
+    className: "ev-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ev-tag"
+  }, "// Stop the War Coalition //"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-title"
+  }, "STWC — עצרו את המלחמה"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-desc"
+  }, "ארגון נגד מלחמה המארגן הפגנות ענק בלונדון לעיתים קרובות בשיתוף עם PSC. לוח האירועים שלהם מציג אירועים שלא תמיד מופיעים ב-PSC."), /*#__PURE__*/React.createElement("a", {
+    className: "ev-link",
+    href: "https://www.stopwar.org.uk/events/",
+    target: "_blank",
+    rel: "noreferrer"
+  }, "← פתח: stopwar.org.uk/events")), /*#__PURE__*/React.createElement("div", {
+    className: "ev-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ev-tag"
+  }, "// Friends of Al-Aqsa //"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-title"
+  }, "FOA — חברים של אל-אקצא"), /*#__PURE__*/React.createElement("div", {
+    className: "ev-desc"
+  }, "ארגון המתמקד בירושלים וזכויות פלסטיניות, מארגן אירועים, לובינג ופעולות ישירות ברחבי בריטניה."), /*#__PURE__*/React.createElement("a", {
+    className: "ev-link",
+    href: "https://www.foa.org.uk/events",
+    target: "_blank",
+    rel: "noreferrer"
+  }, "← פתח: foa.org.uk/events"))), tab === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "sec-h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sec-title"
+  }, "חשבונות אינסטגרם"), /*#__PURE__*/React.createElement("div", {
+    className: "sec-count"
+  }, IG_ACCOUNTS.length, " חשבונות")), /*#__PURE__*/React.createElement("div", {
+    className: "ig-notice"
+  }, /*#__PURE__*/React.createElement("strong", null, "⚠ בדיקה ידנית בלבד"), " — Meta חוסמת כל גישה אוטומטית לאינסטגרם. לחץ \"פתח\" כדי לבדוק כל חשבון. מומלץ לעקוב אחריהם ישירות לעדכונים יומיים."), /*#__PURE__*/React.createElement("div", {
+    className: "ig-grid"
+  }, IG_ACCOUNTS.map((acc, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "ig-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ig-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ig-av"
+  }, acc.handle[0].toUpperCase()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "ig-handle"
+  }, "@", acc.handle), /*#__PURE__*/React.createElement("span", {
+    className: "ig-tag-label"
+  }, acc.tag))), /*#__PURE__*/React.createElement("div", {
+    className: "ig-desc"
+  }, acc.desc), /*#__PURE__*/React.createElement("a", {
+    className: "ig-open",
+    href: acc.url,
+    target: "_blank",
+    rel: "noreferrer"
+  }, "פתח באינסטגרם ←"))))))), /*#__PURE__*/React.createElement("div", {
+    className: "footer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "footer-logo"
+  }, "מרכז המעקב · לונדון"), /*#__PURE__*/React.createElement("div", {
+    className: "footer-src"
+  }, "Al Jazeera · BBC · Guardian · Independent · Reuters · Middle East Eye"))));
+}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(/*#__PURE__*/React.createElement(App, null));
   </script>
 </body>
 </html>
