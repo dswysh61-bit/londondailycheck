@@ -66,6 +66,7 @@ const FALLBACK = [{
   score: 1
 }];
 const R2J = "https://api.rss2json.com/v1/api.json?rss_url=";
+const GN = "https://news.google.com/rss/search?hl=en-GB&gl=GB&ceid=GB:en&q=";
 const FEEDS = [{
   name: "Al Jazeera",
   color: "#e8a020",
@@ -90,7 +91,34 @@ const FEEDS = [{
   name: "Middle East Eye",
   color: "#00a651",
   urls: [R2J + encodeURIComponent("https://www.middleeasteye.net/rss")]
+}, {
+  name: "Private Eye",
+  color: "#d4145a",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("site:private-eye.co.uk"))]
+}, {
+  name: "Morning Star",
+  color: "#b22222",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("site:morningstaronline.co.uk Palestine"))]
 }];
+// סריקה נוספת: חיפוש חופשי בכל העיתונות הבריטית (Google News) — תופס כתבות שלא מופיעות בפידים הראשיים
+const SEARCH_SCANS = [{
+  name: "סריקה: הפגנות לונדון",
+  color: "#5dade2",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("Palestine protest London when:2d"))]
+}, {
+  name: "סריקה: מצעדים וויג'ילים",
+  color: "#48c9b0",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("(march OR vigil OR rally) Gaza UK when:2d"))]
+}, {
+  name: "סריקה: פעולה ישירה",
+  color: "#af7ac5",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("(\"Palestine Action\" OR encampment OR occupation) UK Israel when:3d"))]
+}, {
+  name: "סריקה: שגרירות/משטרה",
+  color: "#f5b041",
+  urls: [R2J + encodeURIComponent(GN + encodeURIComponent("(\"Israeli embassy\" OR \"Met Police\") protest London when:3d"))]
+}];
+const ALL_SOURCES = [...FEEDS, ...SEARCH_SCANS];
 const IG_ACCOUNTS = [{
   handle: "palestinesolidarityuk",
   desc: "PSC UK — הארגון הראשי לסולידריות",
@@ -126,7 +154,67 @@ const IG_ACCOUNTS = [{
   desc: "IJAN UK — יהודים נגד אפרטהייד",
   tag: "יהודי",
   url: "https://www.instagram.com/ijan_uk"
+}, {
+  handle: "palestineprotestsuk",
+  desc: "Palestine Protests UK — ריכוז הפגנות בבריטניה",
+  tag: "הפגנות",
+  url: "https://www.instagram.com/palestineprotestsuk/"
+}, {
+  handle: "syriasolidarityuk",
+  desc: "Syria Solidarity Campaign — קמפיין סולידריות עם סוריה",
+  tag: "קמפיין",
+  url: "https://www.instagram.com/syriasolidarityuk/"
+}, {
+  handle: "essad_48",
+  desc: "Essad_48",
+  tag: "פעיל",
+  url: "https://www.instagram.com/essad_48/"
+}, {
+  handle: "friendsofalaqsa",
+  desc: "Friends of Al-Aqsa — חברים של אל-אקצא",
+  tag: "ארגון",
+  url: "https://www.instagram.com/friendsofalaqsa/"
+}, {
+  handle: "soaspalestinesocietybackup",
+  desc: "SOAS Palestine Society — חשבון גיבוי",
+  tag: "סטודנטים",
+  url: "https://www.instagram.com/soaspalestinesocietybackup/"
+}, {
+  handle: "uor_friendsofpal",
+  desc: "University of Reading — Friends of Palestine",
+  tag: "סטודנטים",
+  url: "https://www.instagram.com/uor_friendsofpal/"
+}, {
+  handle: "lseforpalestine",
+  desc: "LSE for Palestine — סטודנטים ב-LSE",
+  tag: "סטודנטים",
+  url: "https://www.instagram.com/lseforpalestine/"
+}, {
+  handle: "palforumuk",
+  desc: "Palestinian Forum in Britain — הפורום הפלסטיני בבריטניה",
+  tag: "ארגון",
+  url: "https://www.instagram.com/palforumuk/"
+}, {
+  handle: "cnd_uk",
+  desc: "CND UK — הקמפיין לפירוק נשק גרעיני",
+  tag: "ארגון",
+  url: "https://www.instagram.com/cnd_uk/"
+}, {
+  handle: "stwuk",
+  desc: "Stop the War Coalition — עצרו את המלחמה",
+  tag: "ראשי",
+  url: "https://www.instagram.com/stwuk/"
+}, {
+  handle: "mab.national",
+  desc: "MAB — Muslim Association of Britain",
+  tag: "ארגון",
+  url: "https://www.instagram.com/mab.national/"
 }];
+// הגנה מכפילויות — אותו handle לא יופיע פעמיים
+const IG_UNIQUE = IG_ACCOUNTS.filter((a, i, arr) => arr.findIndex(b => b.handle.toLowerCase() === a.handle.toLowerCase()) === i);
+function normTitle(t) {
+  return (t || "").toLowerCase().replace(/\s+-\s+[^-]+$/, "").replace(/[^a-z0-9\u0590-\u05ff ]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
 function stripHtml(h) {
   return (h || "").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').trim();
 }
@@ -142,9 +230,9 @@ function timeAgo(d) {
 }
 function score(text) {
   const t = (text || "").toLowerCase();
-  const protest = ["protest", "demonstration", "march", "rally", "demo", "vigil", "activists", "ceasefire"].some(k => t.includes(k));
-  const topic = ["palestine", "palestinian", "gaza", "israel", "west bank", "hamas", "rafah", "jenin"].some(k => t.includes(k));
-  const london = ["london", "westminster", "uk ", "britain", "british", "trafalgar", "downing"].some(k => t.includes(k));
+  const protest = ["protest", "demonstration", "march", "rally", "demo", "vigil", "activists", "ceasefire", "encampment", "occupation", "blockade", "sit-in", "walkout", "arrest", "palestine action", "boycott"].some(k => t.includes(k));
+  const topic = ["palestine", "palestinian", "gaza", "israel", "west bank", "hamas", "rafah", "jenin", "al-aqsa", "zionist", "idf", "lebanon", "hezbollah"].some(k => t.includes(k));
+  const london = ["london", "westminster", "uk ", "britain", "british", "trafalgar", "downing", "kensington", "met police", "whitehall", "embassy", "soas", "ucl", "lse", "kings college"].some(k => t.includes(k));
   if (topic && protest && london) return 3;
   if (topic && protest) return 2;
   if (topic) return 1;
@@ -308,6 +396,13 @@ const CSS = `
       .ig-desc { font-size:12px; color:#9aa0ab; line-height:1.5; }
       .ig-open { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--gold); margin-top:4px; transition:opacity .15s; }
       .ig-open:hover { opacity:.65; }
+      .prop-group { font-size:16px; font-weight:700; color:var(--gold); margin-bottom:12px; display:flex; align-items:baseline; }
+      .prop-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+      .prop-card { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+      .prop-card.done { border-color:rgba(61,138,95,.45); }
+      .prop-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+      .prop-actions { display:flex; gap:6px; flex-wrap:wrap; }
+      .prop-note { width:100%; min-height:56px; background:var(--bg3); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'Heebo',sans-serif; font-size:12px; padding:8px; resize:vertical; }
       .footer { margin-top:64px; border-top:1px solid var(--border); padding:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
       .footer-logo { font-size:14px; font-weight:700; color:var(--text3); }
       .footer-src { font-size:11px; color:var(--text3); letter-spacing:.5px; }
@@ -371,6 +466,54 @@ function Skeleton() {
     }
   }))));
 }
+const PROPERTY_GROUPS = [{
+  name: "מאורו",
+  items: ["53442873", "1204525311471875110"]
+}, {
+  name: "ארמון",
+  items: ["802025050929634926", "1345707754331681673", "933242236916672467"]
+}];
+const PROP_KEY = "hub_props_v1";
+function loadProps() {
+  try { return JSON.parse(localStorage.getItem(PROP_KEY)) || {}; } catch { return {}; }
+}
+function saveProps(d) {
+  try { localStorage.setItem(PROP_KEY, JSON.stringify(d)); } catch {}
+}
+function PropertiesTab() {
+  const [st, setSt] = useState(loadProps);
+  const todayStr = new Date().toLocaleDateString("he-IL");
+  const upd = (id, patch) => setSt(prev => {
+    const next = { ...prev, [id]: { ...(prev[id] || {}), ...patch } };
+    saveProps(next);
+    return next;
+  });
+  const total = PROPERTY_GROUPS.reduce((n, g) => n + g.items.length, 0);
+  const checkedToday = PROPERTY_GROUPS.flatMap(g => g.items).filter(id => st[id]?.checked === todayStr).length;
+  const h = React.createElement;
+  return h(React.Fragment, null,
+    h("div", { className: "sec-h" },
+      h("div", { className: "sec-title" }, "מעקב נכסים להשכרה"),
+      h("div", { className: "sec-count" }, `${checkedToday}/${total} נבדקו היום`)),
+    h("div", { className: "ig-notice" },
+      h("strong", null, "⚠ בדיקה ידנית"), " — Airbnb חוסמת משיכה אוטומטית. פתח כל נכס, בדוק זמינות ולוח שנה, וסמן \"נבדק\". ההערות נשמרות בדפדפן הזה בלבד."),
+    PROPERTY_GROUPS.map(g => h("div", { key: g.name, style: { marginBottom: 28 } },
+      h("div", { className: "prop-group" }, g.name, h("span", { className: "sec-count", style: { marginRight: 10 } }, g.items.length, " נכסים")),
+      h("div", { className: "prop-list" }, g.items.map(id => {
+        const it = st[id] || {};
+        const done = it.checked === todayStr;
+        return h("div", { key: id, className: "prop-card" + (done ? " done" : "") },
+          h("div", { className: "prop-top" },
+            h("div", null,
+              h("div", { className: "ig-handle" }, "Airbnb #", id),
+              h("div", { className: "time" }, it.checked ? `נבדק לאחרונה: ${it.checked}` : "טרם נבדק")),
+            h("a", { className: "ig-open", href: `https://www.airbnb.co.uk/rooms/${id}`, target: "_blank", rel: "noreferrer" }, "פתח ב-Airbnb ←")),
+          h("div", { className: "prop-actions" },
+            h("button", { className: "pill" + (done ? " on" : ""), onClick: () => upd(id, { checked: done ? null : todayStr }) }, done ? "✓ נבדק היום" : "סמן נבדק"),
+            ["פנוי", "תפוס", "חשוד"].map(sv => h("button", { key: sv, className: "pill" + (it.status === sv ? " on" : ""), onClick: () => upd(id, { status: it.status === sv ? null : sv }) }, sv))),
+          h("textarea", { className: "prop-note", placeholder: "הערות (תאריכי הזמנה, שינויים במודעה...)", value: it.note || "", onChange: e => upd(id, { note: e.target.value }) }));
+      })))));
+}
 function App() {
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -385,7 +528,7 @@ function App() {
     setErrors([]);
     setIsFallback(false);
     try {
-      const c = localStorage.getItem("hub_news_he");
+      const c = localStorage.getItem("hub_news_he_v2");
       if (c) {
         const {
           data,
@@ -403,14 +546,17 @@ function App() {
     const newLogs = [];
     const errs = [];
     const found = [];
-    const results = await Promise.all(FEEDS.map(f => fetchFeed(f)));
+    const results = await Promise.all(ALL_SOURCES.map(f => fetchFeed(f)));
+    const seen = new Set();
     results.forEach(res => {
       if (res.ok) {
         let matched = 0;
         (res.items || []).forEach(item => {
           const combined = (item.title || "") + " " + stripHtml(item.description || "");
           const s = score(combined);
-          if (s > 0) {
+          const key = normTitle(item.title) || item.link;
+          if (s > 0 && !seen.has(key)) {
+            seen.add(key);
             matched++;
             found.push({
               title: item.title || "ללא כותרת",
@@ -438,7 +584,7 @@ function App() {
       setIsFallback(false);
       setUpdated(new Date(ts).toLocaleTimeString("he-IL"));
       try {
-        localStorage.setItem("hub_news_he", JSON.stringify({
+        localStorage.setItem("hub_news_he_v2", JSON.stringify({
           data: found,
           ts
         }));
@@ -453,8 +599,9 @@ function App() {
   useEffect(() => {
     fetchNews();
   }, [fetchNews]);
-  const FILTER_OPTS = ["הכל", ...FEEDS.map(f => f.name)];
-  const shown = filter === "הכל" ? news : news?.filter(n => n.source === filter);
+  const FILTER_OPTS = ["הכל", "סריקות חיפוש", ...FEEDS.map(f => f.name)];
+  const scanNames = SEARCH_SCANS.map(f => f.name);
+  const shown = filter === "הכל" ? news : filter === "סריקות חיפוש" ? news?.filter(n => scanNames.includes(n.source)) : news?.filter(n => n.source === filter);
   const today = new Date().toLocaleDateString("he-IL", {
     weekday: "long",
     day: "numeric",
@@ -488,9 +635,9 @@ function App() {
     className: "hero-h1"
   }, "הפגנות ", /*#__PURE__*/React.createElement("span", null, "פרו-פלסטיניות"), /*#__PURE__*/React.createElement("br", null), "בלונדון"), /*#__PURE__*/React.createElement("p", {
     className: "hero-sub"
-  }, "אגרגטור חדשות ואירועים בזמן אמת — Al Jazeera, BBC, Guardian, Independent ועוד")), /*#__PURE__*/React.createElement("div", {
+  }, "אגרגטור חדשות ואירועים בזמן אמת — Al Jazeera, BBC, Guardian, Independent, Private Eye ועוד + סריקות חיפוש")), /*#__PURE__*/React.createElement("div", {
     className: "tabs"
-  }, ["חדשות", "אירועים", "אינסטגרם"].map((t, i) => /*#__PURE__*/React.createElement("button", {
+  }, ["חדשות", "אירועים", "אינסטגרם", "מעקב נכסים"].map((t, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: `tab${tab === i ? " on" : ""}`,
     onClick: () => setTab(i)
@@ -635,11 +782,11 @@ function App() {
     className: "sec-title"
   }, "חשבונות אינסטגרם"), /*#__PURE__*/React.createElement("div", {
     className: "sec-count"
-  }, IG_ACCOUNTS.length, " חשבונות")), /*#__PURE__*/React.createElement("div", {
+  }, IG_UNIQUE.length, " חשבונות")), /*#__PURE__*/React.createElement("div", {
     className: "ig-notice"
   }, /*#__PURE__*/React.createElement("strong", null, "⚠ בדיקה ידנית בלבד"), " — Meta חוסמת כל גישה אוטומטית לאינסטגרם. לחץ \"פתח\" כדי לבדוק כל חשבון. מומלץ לעקוב אחריהם ישירות לעדכונים יומיים."), /*#__PURE__*/React.createElement("div", {
     className: "ig-grid"
-  }, IG_ACCOUNTS.map((acc, i) => /*#__PURE__*/React.createElement("div", {
+  }, IG_UNIQUE.map((acc, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "ig-card"
   }, /*#__PURE__*/React.createElement("div", {
@@ -657,13 +804,13 @@ function App() {
     href: acc.url,
     target: "_blank",
     rel: "noreferrer"
-  }, "פתח באינסטגרם ←"))))))), /*#__PURE__*/React.createElement("div", {
+  }, "פתח באינסטגרם ←"))))), tab === 3 && /*#__PURE__*/React.createElement(PropertiesTab, null))), /*#__PURE__*/React.createElement("div", {
     className: "footer"
   }, /*#__PURE__*/React.createElement("div", {
     className: "footer-logo"
   }, "מרכז המעקב · לונדון"), /*#__PURE__*/React.createElement("div", {
     className: "footer-src"
-  }, "Al Jazeera · BBC · Guardian · Independent · Reuters · Middle East Eye"))));
+  }, "Al Jazeera · BBC · Guardian · Independent · Reuters · Middle East Eye · Private Eye · Morning Star · Google News"))));
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
